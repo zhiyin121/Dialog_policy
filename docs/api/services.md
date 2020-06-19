@@ -1,3 +1,0 @@
-# Services
-
-::: adviser.services

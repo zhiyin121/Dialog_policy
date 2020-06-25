@@ -28,4 +28,3 @@ urllib3==1.25.9
 wcwidth==0.1.9
 Werkzeug==1.0.1
 zmq==0.0.0
-git+git://github.com/imgarylai/bert-embedding

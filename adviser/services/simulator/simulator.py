@@ -23,6 +23,7 @@ import configparser
 import copy
 import os
 from typing import List
+import random
 
 from services.service import PublishSubscribe
 from services.service import Service
@@ -30,6 +31,22 @@ from services.simulator.goal import Constraint, Goal
 from utils import UserAct, UserActionType, SysAct, SysActionType, common
 from utils.domain.domain import Domain
 from utils.logger import DiasysLogger
+from utils.userstate import EmotionType
+
+def emtionadd(emotion_list, action):
+	if action == 0:
+		emotion_list.append(emotion_list[-1])
+	elif action == 1:
+		if emotion_list[-1] == 1:
+			emotion_list.append(emotion_list[-1])
+		else:
+			emotion_list.append(emotion_list[-1]+1)
+	elif action == -1:
+		if emtion_list[-1] == -1:
+			emotion_list.append(emotion_list[-1])
+		else:
+			emotion_list.append(emotion_list[-1]-1)
+	return emotion_list
 
 
 class HandcraftedUserSimulator(Service):
@@ -42,6 +59,9 @@ class HandcraftedUserSimulator(Service):
 
     def __init__(self, domain: Domain, logger: DiasysLogger = DiasysLogger()):
         super(HandcraftedUserSimulator, self).__init__(domain)
+
+		# initialize emotion randomly
+		self.emotion_list = list(random.choice([1, 0, -1])) # valence = {positive: 1, neutral: 0, negative: -1}
 
         # possible system actions
         self.receive_options = {SysActionType.Welcome: self._receive_welcome,
@@ -264,7 +284,12 @@ class HandcraftedUserSimulator(Service):
         if (self.goal.is_fulfilled()
                 and not self.agenda.contains_action_of_type(UserActionType.Inform)
                 and not req_actions_not_in_goal):
+			emotionadd(self.emotion_list, 1)
             self._finish_dialog()
+		else:
+			emotionadd(self.emotion_list, -1)
+		
+
 
     def _receive_informbyalternatives(self, sys_act: SysAct):
         """
@@ -279,6 +304,8 @@ class HandcraftedUserSimulator(Service):
             self._receive_informbyname(sys_act)
         else:
             self._repeat_last_actions()
+			
+			
 
     def _receive_request(self, sys_act: SysAct):
         """
@@ -301,18 +328,21 @@ class HandcraftedUserSimulator(Service):
         Args:
             sys_act (SysAct): the last system action        
         """
+		
+		flag = True
         for slot, _value in sys_act.slot_values.items():
             value = _value[0]  # there is always only one value
             if self.goal.is_inconsistent_constraint_strict(Constraint(slot, value)):
                 # inform about correct value with some probability, otherwise deny value
-                if common.random.random() < self.parameters['usermodel']['InformOnConfirm']:
+				flag = False
+                if common.random.random() < self.parameters['usermodel']['InformOnConfirm']: # negative and revise
                     self.agenda.push(UserAct(
                         act_type=UserActionType.Inform, slot=slot,
                         value=self.goal.get_constraint(slot),
                         score=1.0))
-                else:
+                else:  # negative
                     self.agenda.push(UserAct(
-                        act_type=UserActionType.NegativeInform, slot=slot, value=value, score=1.0))
+                        act_type=UserActionType.NegativeInform, slot=slot, value=value, score=1.0))  
             else:
                 # NOTE using inform currently since NLU currently does not support Affirm here and
                 # NLU would tinker it into an Inform action anyway
@@ -320,6 +350,12 @@ class HandcraftedUserSimulator(Service):
                 #     UserAct(act_type=UserActionType.Affirm, score=1.0))
                 self.agenda.push(
                     UserAct(act_type=UserActionType.Inform, slot=slot, value=value, score=1.0))
+		
+		if flag:
+			emotionadd(emotion_list, 1)
+		else:
+			emotionadd(emotion_list, -1)
+
 
     def _receive_select(self, sys_act: SysAct):
         """

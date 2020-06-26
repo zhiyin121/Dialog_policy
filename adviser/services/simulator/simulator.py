@@ -60,8 +60,8 @@ class HandcraftedUserSimulator(Service):
     def __init__(self, domain: Domain, logger: DiasysLogger = DiasysLogger()):
         super(HandcraftedUserSimulator, self).__init__(domain)
 
-		# initialize emotion randomly
-		self.emotion_list = list(random.choice([1, 0, -1])) # valence = {positive: 1, neutral: 0, negative: -1}
+		# # initialize emotion randomly
+        # self.emotion_list = list(random.choice([1, 0, -1])) # valence = {positive: 1, neutral: 0, negative: -1}
 
         # possible system actions
         self.receive_options = {SysActionType.Welcome: self._receive_welcome,
@@ -284,10 +284,10 @@ class HandcraftedUserSimulator(Service):
         if (self.goal.is_fulfilled()
                 and not self.agenda.contains_action_of_type(UserActionType.Inform)
                 and not req_actions_not_in_goal):
-			emotionadd(self.emotion_list, 1)
+			# emotionadd(self.emotion_list, 1)
             self._finish_dialog()
-		else:
-			emotionadd(self.emotion_list, -1)
+		# else:
+		# 	emotionadd(self.emotion_list, -1)
 		
 
 
@@ -304,8 +304,7 @@ class HandcraftedUserSimulator(Service):
             self._receive_informbyname(sys_act)
         else:
             self._repeat_last_actions()
-			
-			
+
 
     def _receive_request(self, sys_act: SysAct):
         """
@@ -328,13 +327,13 @@ class HandcraftedUserSimulator(Service):
         Args:
             sys_act (SysAct): the last system action        
         """
-		
-		flag = True
+
+        flag = True
         for slot, _value in sys_act.slot_values.items():
             value = _value[0]  # there is always only one value
             if self.goal.is_inconsistent_constraint_strict(Constraint(slot, value)):
                 # inform about correct value with some probability, otherwise deny value
-				flag = False
+                flag = False
                 if common.random.random() < self.parameters['usermodel']['InformOnConfirm']: # negative and revise
                     self.agenda.push(UserAct(
                         act_type=UserActionType.Inform, slot=slot,
@@ -351,10 +350,10 @@ class HandcraftedUserSimulator(Service):
                 self.agenda.push(
                     UserAct(act_type=UserActionType.Inform, slot=slot, value=value, score=1.0))
 		
-		if flag:
-			emotionadd(emotion_list, 1)
-		else:
-			emotionadd(emotion_list, -1)
+        # if flag:
+        #     emotionadd(emotion_list, 1)
+        # else:
+        #     emotionadd(emotion_list, -1)
 
 
     def _receive_select(self, sys_act: SysAct):
@@ -625,20 +624,20 @@ class HandcraftedUserSimulator(Service):
                             # there is no current offer
 
                             # sometimes ask for alternative
-                            if common.random.random() < self.parameters['usermodel']['ReqAlt']:
-                                self._request_alt(_offer)
-                                return False
-                            else:
-                                self.goal.requests[self.domain.get_primary_key()] = _offer
-                                for _action in self.goal.missing_informs:
-                                    # informed constraints by system are definitely consistent with
-                                    # goal at this point
-                                    if Constraint(_action.slot, _action.value) not in informed_constraints_by_system:
-                                        self.agenda.push(UserAct(
-                                            act_type=UserActionType.Request,
-                                            slot=_action.slot,
-                                            value=None))
-                                return True
+                            # if common.random.random() < self.parameters['usermodel']['ReqAlt']:
+                            #     self._request_alt(_offer)
+                            #     return False
+                            # else:
+                            self.goal.requests[self.domain.get_primary_key()] = _offer
+                            for _action in self.goal.missing_informs:
+                                # informed constraints by system are definitely consistent with
+                                # goal at this point
+                                if Constraint(_action.slot, _action.value) not in informed_constraints_by_system:
+                                    self.agenda.push(UserAct(
+                                        act_type=UserActionType.Request,
+                                        slot=_action.slot,
+                                        value=None))
+                            return True
 
                     # no valid offer was given
                     self._request_alt()

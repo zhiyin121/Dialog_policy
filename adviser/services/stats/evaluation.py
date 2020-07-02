@@ -156,6 +156,16 @@ class PolicyEvaluator(Service):
 
         return {"sys_turn_over": True}
 
+	@PublishSubscribe(sub_topics=['emotion_status'])
+	def emotion_reward(self, emotion_status: float = None) :
+		"""
+			Rewarding the emotion changes.
+		"""
+		if emotion_status[0] > emotion_status[1]:
+			self.dialog_reward += emotion_status[0]-emotion_status[1]
+		else:
+			self.dialog_reward += emotion_status[0]-emotion_status[1]
+
     def dialog_start(self, dialog_start=False):
         """
             Clears the state of the evaluator in preparation to start a new dialog

@@ -168,7 +168,7 @@ class HandcraftedUserSimulator(Service):
         if sys_act is not None and sys_act.type == SysActionType.Bye:
             # if self.goal.is_fulfilled():
             #     self._finish_dialog()
-            return {"sim_goal": self.goal}
+            return {"sim_goal": self.goal, 'emotion_status':self.emotion_list[-2:]}
 
         if sys_act is not None:
             self.receive(sys_act)
@@ -179,7 +179,7 @@ class HandcraftedUserSimulator(Service):
 
         self.logger.dialog_turn("User Action: " + str(user_acts))
         # input()
-        return {'user_acts': user_acts}
+        return {'user_acts': user_acts, 'emotion_status':self.emotion_list[-2:]}
 
     def receive(self, sys_act: SysAct):
         """

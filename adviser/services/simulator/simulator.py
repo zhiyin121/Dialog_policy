@@ -121,6 +121,9 @@ class HandcraftedUserSimulator(Service):
         self.goal = Goal(domain, self.parameters['goal'])
         self.agenda = Agenda()
         self.num_actions_next_turn = -1
+	
+	# for user happiness
+        self.happiness = random.uniform(0, 1.0)
 
     def dialog_start(self):
         """Resets the user model at the beginning of a dialog, e.g. draws a new goal and populates

@@ -181,6 +181,26 @@ class HandcraftedUserSimulator(Service):
         # input()
         return {'user_acts': user_acts, 'emotion_status':self.emotion_list[-2:]}
 
+    def user_happiness(self, sys_act: SysAct):
+        """We measure user happiness based on system action and length of dialog
+            we look for the reason of making user's happiness fluctuate(eg. neutral to happy)
+        :argument : sys_act: SysAct
+        :return : self.happiness, self.turn(here means length), self.patience
+
+        """
+    # human will have random patient at the beginning
+        dialog_len = 0
+        if sys_act is not None and sys_act.type == SysActionType.Confirm:
+            self.happiness -= 0.5
+        elif sys_act is not None and sys_act.type == SysActionType.Bad:
+            self.happiness -= 1.0
+        elif sys_act == self.last_system_action:
+            self.happiness -= 1.0
+        # if length of dialog
+
+        if sys_act is not None and sys_act.type == SysActionType.Bye:
+            return {"happiness": self.happiness,'patience': self.patience}
+
     def receive(self, sys_act: SysAct):
         """
         This function makes sure that the agenda reflects all changes needed for the received

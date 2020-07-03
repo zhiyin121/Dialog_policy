@@ -33,20 +33,20 @@ from utils.domain.domain import Domain
 from utils.logger import DiasysLogger
 from utils.userstate import EmotionType
 
-def emtionadd(emotion_list, action):
-	if action == 0:
-		emotion_list.append(emotion_list[-1])
-	elif action == 1:
-		if emotion_list[-1] == 1:
-			emotion_list.append(emotion_list[-1])
-		else:
-			emotion_list.append(emotion_list[-1]+1)
-	elif action == -1:
-		if emtion_list[-1] == -1:
-			emotion_list.append(emotion_list[-1])
-		else:
-			emotion_list.append(emotion_list[-1]-1)
-	return emotion_list
+def emotionadd(emotion_list, action):
+    if action == 0:
+        emotion_list.append(emotion_list[-1])
+    elif action == 1:
+        if emotion_list[-1] == 1:
+            emotion_list.append(emotion_list[-1])
+        else:
+            emotion_list.append(emotion_list[-1]+1)
+    elif action == -1:
+        if emotion_list[-1] == -1:
+            emotion_list.append(emotion_list[-1])
+        else:
+            emotion_list.append(emotion_list[-1]-1)
+    return emotion_list
 
 
 class HandcraftedUserSimulator(Service):
@@ -60,8 +60,8 @@ class HandcraftedUserSimulator(Service):
     def __init__(self, domain: Domain, logger: DiasysLogger = DiasysLogger()):
         super(HandcraftedUserSimulator, self).__init__(domain)
 
-		# # initialize emotion randomly
-        # self.emotion_list = list(random.choice([1, 0, -1])) # valence = {positive: 1, neutral: 0, negative: -1}
+        # # initialize emotion randomly
+        self.emotion_list = [random.choice([1, 0, -1])]# valence = {positive: 1, neutral: 0, negative: -1}
 
         # possible system actions
         self.receive_options = {SysActionType.Welcome: self._receive_welcome,
@@ -151,7 +151,7 @@ class HandcraftedUserSimulator(Service):
         self.excluded_venues = []
         self.turn = 0
 
-    @PublishSubscribe(sub_topics=["sys_act", "sys_turn_over"], pub_topics=["user_acts", "sim_goal"])
+    @PublishSubscribe(sub_topics=["sys_act", "sys_turn_over"], pub_topics=["user_acts", "sim_goal", "emotion_status"])
     def user_turn(self, sys_act: SysAct = None, sys_turn_over=False) \
             -> dict(user_acts=List[UserAct], sim_goal=Goal):
         """
@@ -168,7 +168,8 @@ class HandcraftedUserSimulator(Service):
         if sys_act is not None and sys_act.type == SysActionType.Bye:
             # if self.goal.is_fulfilled():
             #     self._finish_dialog()
-            return {"sim_goal": self.goal, 'emotion_status':self.emotion_list[-2:]}
+            self.emotion_list = [random.choice([1, 0, -1])]
+            return {"sim_goal": self.goal}
 
         if sys_act is not None:
             self.receive(sys_act)
@@ -178,6 +179,8 @@ class HandcraftedUserSimulator(Service):
         # user_acts = [UserAct(text="Hi!", act_type=UserActionType.Hello, score=1.)]
 
         self.logger.dialog_turn("User Action: " + str(user_acts))
+        self.logger.dialog_turn("emotion_status: " + str(self.emotion_list))
+        
         # input()
         return {'user_acts': user_acts, 'emotion_status':self.emotion_list[-2:]}
 
@@ -236,6 +239,9 @@ class HandcraftedUserSimulator(Service):
                 self.logger.error(
                     "System Action Type is {}, but I don't know how to handle it!".format(
                         sys_act.type))
+                        
+        emotionadd(self.emotion_list, 0)            
+        
 
     def _receive_welcome(self, sys_act: SysAct):
         """
@@ -247,6 +253,8 @@ class HandcraftedUserSimulator(Service):
         # do nothing as the first turn is already intercepted
         # also, the 'welcome' action is never used in reinforcement learning from the policy
         # -> will only, if at all, occur at first turn
+        
+        emotionadd(self.emotion_list, 0)
 
     def _receive_informbyname(self, sys_act: SysAct):
         """
@@ -284,12 +292,12 @@ class HandcraftedUserSimulator(Service):
         if (self.goal.is_fulfilled()
                 and not self.agenda.contains_action_of_type(UserActionType.Inform)
                 and not req_actions_not_in_goal):
-			# emotionadd(self.emotion_list, 1)
+            emotionadd(self.emotion_list, 1)
             self._finish_dialog()
-		# else:
-		# 	emotionadd(self.emotion_list, -1)
-		
-
+        else:
+            emotionadd(self.emotion_list, -1)
+       
+        
 
     def _receive_informbyalternatives(self, sys_act: SysAct):
         """
@@ -305,6 +313,8 @@ class HandcraftedUserSimulator(Service):
         else:
             self._repeat_last_actions()
 
+        emotionadd(self.emotion_list, 0)
+        
 
     def _receive_request(self, sys_act: SysAct):
         """
@@ -319,6 +329,9 @@ class HandcraftedUserSimulator(Service):
                 act_type=UserActionType.Inform,
                 slot=slot, value=self.goal.get_constraint(slot),
                 score=1.0))
+                
+        emotionadd(self.emotion_list, 0)
+
 
     def _receive_confirm(self, sys_act: SysAct):
         """
@@ -349,11 +362,11 @@ class HandcraftedUserSimulator(Service):
                 #     UserAct(act_type=UserActionType.Affirm, score=1.0))
                 self.agenda.push(
                     UserAct(act_type=UserActionType.Inform, slot=slot, value=value, score=1.0))
-		
-        # if flag:
-        #     emotionadd(emotion_list, 1)
-        # else:
-        #     emotionadd(emotion_list, -1)
+        
+        if flag:
+             emotionadd(self.emotion_list, 1)
+        else:
+             emotionadd(self.emotion_list, -1)
 
 
     def _receive_select(self, sys_act: SysAct):
@@ -390,6 +403,9 @@ class HandcraftedUserSimulator(Service):
                         act_type=UserActionType.NegativeInform,
                         slot=slot,
                         value=value, score=1.0))
+                        
+        emotionadd(self.emotion_list, 0)     
+                        
 
     def _receive_requestmore(self, sys_act: SysAct):
         """
@@ -410,6 +426,9 @@ class HandcraftedUserSimulator(Service):
         else:
             # make sure that dialog becomes longer
             self._repeat_last_actions()
+            
+        emotionadd(self.emotion_list, 0)   
+        
 
     def _receive_bad(self, sys_act:SysAct):
         """
@@ -420,7 +439,10 @@ class HandcraftedUserSimulator(Service):
         """
         # NOTE repeat last action, should never occur on intention-level as long no noise is used
         self._repeat_last_actions()
-
+        
+        emotionadd(self.emotion_list, 0)
+        
+        
     def _receive_confirmrequest(self, sys_act: SysAct):
         """
         Processes a confirmrequest action from the system.
@@ -438,6 +460,9 @@ class HandcraftedUserSimulator(Service):
                 # system's confirm action
                 self._receive_confirm(
                     SysAct(act_type=SysActionType.Confirm, slot_values={slot: [value]}))
+                    
+        emotionadd(self.emotion_list, 0)
+        
 
     def respond(self):
         """

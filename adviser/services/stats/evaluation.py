@@ -43,13 +43,19 @@ class ObjectiveReachedEvaluator(object):
         self.success_reward = success_reward
         self.logger = logger
 
-    def get_turn_reward(self):
+    @PublishSubscribe(sub_topics=["happiness"])
+    def get_turn_reward(self, happiness: float):
         """ 
         Get the reward for one turn
-        
+
         Returns:
             (int): the reward for the given turn
         """
+        if happiness < 0.0:
+            self.turn_reward -= happiness
+        elif happiness > 0.0:
+            self.turn_reward += happiness
+            
         return self.turn_reward
 
     def get_final_reward(self, sim_goal: Goal, logging=True):

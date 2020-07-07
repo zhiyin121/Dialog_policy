@@ -199,3 +199,4 @@ tools/opensmile-2.3.0/
 adviser/tools/opencv*
 adviser/tools/OpenFace
 adviser/tools/cppzmq
+*.de

@@ -43,18 +43,14 @@ class ObjectiveReachedEvaluator(object):
         self.success_reward = success_reward
         self.logger = logger
 
-    @PublishSubscribe(sub_topics=["happiness"])
     def get_turn_reward(self, happiness: float):
         """ 
         Get the reward for one turn
 
         Returns:
-            (int): the reward for the given turn
+            (float): the reward for the given turn
         """
-        if happiness < 0.0:
-            self.turn_reward -= happiness
-        elif happiness > 0.0:
-            self.turn_reward += happiness
+        self.turn_reward += happiness
             
         return self.turn_reward
 
@@ -146,8 +142,8 @@ class PolicyEvaluator(Service):
         self.eval_turns = []
         self.is_training = False
 
-    @PublishSubscribe(sub_topics=['sys_act'], pub_topics=["sys_turn_over"])
-    def evaluate_turn(self, sys_act: SysAct = None):
+    @PublishSubscribe(sub_topics=['sys_act',"happiness"], pub_topics=["sys_turn_over"])
+    def evaluate_turn(self, sys_act: SysAct = None, happiness: float = 0.0):
         """
             Evaluates the reward for a given turn
 
@@ -157,7 +153,7 @@ class PolicyEvaluator(Service):
             Returns:
                 (bool): A signal representing the end of a complete dialog turn
         """
-        self.dialog_reward += self.evaluator.get_turn_reward()
+        self.dialog_reward += self.evaluator.get_turn_reward(happiness)
         self.dialog_turns += 1
 
         return {"sys_turn_over": True}

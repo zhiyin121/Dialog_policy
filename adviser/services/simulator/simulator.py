@@ -129,6 +129,7 @@ class HandcraftedUserSimulator(Service):
 
         self.goal.init()
         self.agenda.init(self.goal)
+        self.emotion_list = [random.choice([1, 0, -1])]
         if self.logger:
             self.logger.dialog_turn(
                 "New goal has constraints {} and requests {}.".format(
@@ -168,11 +169,11 @@ class HandcraftedUserSimulator(Service):
         if sys_act is not None and sys_act.type == SysActionType.Bye:
             # if self.goal.is_fulfilled():
             #     self._finish_dialog()
-            self.emotion_list = [random.choice([1, 0, -1])]
             return {"sim_goal": self.goal}
 
         if sys_act is not None:
             self.receive(sys_act)
+            happiness = self.user_happiness(sys_act)
 
         user_acts = self.respond()
 
@@ -182,7 +183,7 @@ class HandcraftedUserSimulator(Service):
         self.logger.dialog_turn("emotion_status: " + str(self.emotion_list))
         
         # input()
-        return {'user_acts': user_acts, 'emotion_status':self.emotion_list[-2:]}
+        return {'user_acts': user_acts, 'emotion_status':self.emotion_list[-2:], 'happiness': happiness}
 
     def user_happiness(self, sys_act: SysAct):
         """We measure user happiness based on system action and length of dialog
@@ -192,17 +193,16 @@ class HandcraftedUserSimulator(Service):
 
         """
     # human will have random patient at the beginning
-        dialog_len = 0
+        self.happiness = 0
         if sys_act is not None and sys_act.type == SysActionType.Confirm:
             self.happiness -= 0.5
         elif sys_act is not None and sys_act.type == SysActionType.Bad:
             self.happiness -= 1.0
         elif sys_act == self.last_system_action:
             self.happiness -= 1.0
-        # if length of dialog
 
         if sys_act is not None and sys_act.type == SysActionType.Bye:
-            return {"happiness": self.happiness,'patience': self.patience}
+            return self.happiness
 
     def receive(self, sys_act: SysAct):
         """
@@ -259,9 +259,6 @@ class HandcraftedUserSimulator(Service):
                 self.logger.error(
                     "System Action Type is {}, but I don't know how to handle it!".format(
                         sys_act.type))
-                        
-        emotionadd(self.emotion_list, 0)            
-        
 
     def _receive_welcome(self, sys_act: SysAct):
         """

@@ -164,10 +164,8 @@ class PolicyEvaluator(Service):
             Rewarding the emotion changes.
         """
         # print(emotion_status)
-        if emotion_status[0] > emotion_status[1]:
-            self.dialog_reward += emotion_status[0]-emotion_status[1]
-        else:
-            self.dialog_reward += emotion_status[0]-emotion_status[1]
+        
+        self.dialog_reward += emotion_status[0]-emotion_status[1]
 
     def dialog_start(self, dialog_start=False):
         """

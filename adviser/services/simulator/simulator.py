@@ -62,7 +62,7 @@ class HandcraftedUserSimulator(Service):
 
         # # initialize emotion randomly
         self.emotion_list = [random.choice([1, 0, -1])]# valence = {positive: 1, neutral: 0, negative: -1}
-
+        self.happiness = round(random.uniform(0, 1), 2)
         # possible system actions
         self.receive_options = {SysActionType.Welcome: self._receive_welcome,
                                 SysActionType.InformByName: self._receive_informbyname,
@@ -152,7 +152,7 @@ class HandcraftedUserSimulator(Service):
         self.excluded_venues = []
         self.turn = 0
 
-    @PublishSubscribe(sub_topics=["sys_act", "sys_turn_over"], pub_topics=["user_acts", "sim_goal", "emotion_status"])
+    @PublishSubscribe(sub_topics=["sys_act", "sys_turn_over"], pub_topics=["user_acts", "sim_goal", "emotion_status", "happiness"])
     def user_turn(self, sys_act: SysAct = None, sys_turn_over=False) \
             -> dict(user_acts=List[UserAct], sim_goal=Goal):
         """
@@ -173,7 +173,7 @@ class HandcraftedUserSimulator(Service):
 
         if sys_act is not None:
             self.receive(sys_act)
-            happiness = self.user_happiness(sys_act)
+            self.user_happiness(sys_act)
 
         user_acts = self.respond()
 
@@ -181,9 +181,10 @@ class HandcraftedUserSimulator(Service):
 
         self.logger.dialog_turn("User Action: " + str(user_acts))
         self.logger.dialog_turn("emotion_status: " + str(self.emotion_list))
+        self.logger.dialog_turn("happiness: " + str(self.happiness))
         
         # input()
-        return {'user_acts': user_acts, 'emotion_status':self.emotion_list[-2:], 'happiness': happiness}
+        return {'user_acts': user_acts, 'emotion_status':self.emotion_list[-2:], 'happiness': self.happiness}
 
     def user_happiness(self, sys_act: SysAct):
         """We measure user happiness based on system action and length of dialog
@@ -193,14 +194,17 @@ class HandcraftedUserSimulator(Service):
 
         """
     # human will have random patient at the beginning
-        self.happiness = 0
         if sys_act is not None and sys_act.type == SysActionType.Confirm:
             self.happiness -= 0.5
         elif sys_act is not None and sys_act.type == SysActionType.Bad:
             self.happiness -= 1.0
         elif sys_act == self.last_system_action:
             self.happiness -= 1.0
-
+        elif self.goal.is_fulfilled():
+            self.happines += 1.5
+        else:
+            self.happines += 0.5
+    # the dialog is finished
         if sys_act is not None and sys_act.type == SysActionType.Bye:
             return self.happiness
 

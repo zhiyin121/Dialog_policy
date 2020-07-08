@@ -165,7 +165,7 @@ class PolicyEvaluator(Service):
         """
         # print(emotion_status)
         
-        self.dialog_reward += emotion_status[0]-emotion_status[1]
+        self.dialog_reward += 0#emotion_status[0]-emotion_status[1]
 
     def dialog_start(self, dialog_start=False):
         """

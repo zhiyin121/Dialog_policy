@@ -62,7 +62,7 @@ class HandcraftedUserSimulator(Service):
 
         # # initialize emotion randomly
         self.emotion_list = [random.choice([1, 0, -1])]# valence = {positive: 1, neutral: 0, negative: -1}
-        self.happiness = round(random.uniform(0, 1), 2)
+        self.happiness = round(random.uniform(0, 1), 2) #happines initialization
         # possible system actions
         self.receive_options = {SysActionType.Welcome: self._receive_welcome,
                                 SysActionType.InformByName: self._receive_informbyname,

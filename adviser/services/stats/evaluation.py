@@ -142,8 +142,8 @@ class PolicyEvaluator(Service):
         self.eval_turns = []
         self.is_training = False
 
-    @PublishSubscribe(sub_topics=['sys_act',"happiness"], pub_topics=["sys_turn_over"])
-    def evaluate_turn(self, sys_act: SysAct = None, happiness: float = 0.0):
+    @PublishSubscribe(sub_topics=['sys_act'], pub_topics=["sys_turn_over"])# ,"happiness"
+    def evaluate_turn(self, sys_act: SysAct = None):#, happiness: float = 0.0):
         """
             Evaluates the reward for a given turn
 
@@ -153,13 +153,13 @@ class PolicyEvaluator(Service):
             Returns:
                 (bool): A signal representing the end of a complete dialog turn
         """
-        self.dialog_reward += self.evaluator.get_turn_reward(happiness)
+        self.dialog_reward += self.evaluator.get_turn_reward(0)#happiness)
         self.dialog_turns += 1
 
         return {"sys_turn_over": True}
 
     @PublishSubscribe(sub_topics=['emotion_status'])
-    def emotion_reward(self, emotion_status: float = None) :
+    def emotion_reward(self, emotion_status: list = None) :
         """
             Rewarding the emotion changes.
         """

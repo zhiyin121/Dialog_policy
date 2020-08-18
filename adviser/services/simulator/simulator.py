@@ -60,9 +60,6 @@ class HandcraftedUserSimulator(Service):
     def __init__(self, domain: Domain, logger: DiasysLogger = DiasysLogger()):
         super(HandcraftedUserSimulator, self).__init__(domain)
 
-        # # initialize emotion randomly
-        self.emotion_list = [random.choice([1, 0, -1])]# valence = {positive: 1, neutral: 0, negative: -1}
-        self.happiness = round(random.uniform(0, 1), 2)
         # possible system actions
         self.receive_options = {SysActionType.Welcome: self._receive_welcome,
                                 SysActionType.InformByName: self._receive_informbyname,
@@ -130,6 +127,7 @@ class HandcraftedUserSimulator(Service):
         self.goal.init()
         self.agenda.init(self.goal)
         self.emotion_list = [random.choice([1, 0, -1])]
+        self.happiness = round(random.uniform(0, 1), 2)
         if self.logger:
             self.logger.dialog_turn(
                 "New goal has constraints {} and requests {}.".format(
@@ -165,6 +163,7 @@ class HandcraftedUserSimulator(Service):
             (dict): Dictionary including the user acts as a list and the current user's goal.
 
         """
+        # print('user_turn!')
         # self.turn = dialog_graph.num_turns
         if sys_act is not None and sys_act.type == SysActionType.Bye:
             # if self.goal.is_fulfilled():

@@ -59,7 +59,6 @@ class HandcraftedUserSimulator(Service):
 
     def __init__(self, domain: Domain, logger: DiasysLogger = DiasysLogger()):
         super(HandcraftedUserSimulator, self).__init__(domain)
-
         # possible system actions
         self.receive_options = {SysActionType.Welcome: self._receive_welcome,
                                 SysActionType.InformByName: self._receive_informbyname,
@@ -192,7 +191,7 @@ class HandcraftedUserSimulator(Service):
         :return : self.happiness, self.turn(here means length), self.patience
 
         """
-    # human will have random patient at the beginning
+        # human will have random patient at the beginning
         if sys_act is not None and sys_act.type == SysActionType.Confirm:
             self.happiness -= 0.5
         elif sys_act is not None and sys_act.type == SysActionType.Bad:
@@ -203,7 +202,7 @@ class HandcraftedUserSimulator(Service):
             self.happines += 1.5
         else:
             self.happines += 0.5
-    # the dialog is finished
+        # the dialog is finished
         if sys_act is not None and sys_act.type == SysActionType.Bye:
             return self.happiness
 

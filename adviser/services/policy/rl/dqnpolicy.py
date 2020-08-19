@@ -37,6 +37,7 @@ from utils.domain.jsonlookupdomain import JSONLookupDomain
 from utils.logger import DiasysLogger
 from utils.sysact import SysAct, SysActionType
 from utils.useract import UserActionType
+from services.stats.evaluation import ObjectiveReachedEvaluator
 
 
 class DQNPolicy(RLPolicy, Service):
@@ -55,7 +56,8 @@ class DQNPolicy(RLPolicy, Service):
                  p_dropout: float = 0.0, training_frequency: int = 2, train_dialogs: int = 1000,
                  include_confreq: bool = False, logger: DiasysLogger = DiasysLogger(),
                  max_turns: int = 25,
-                 summary_writer: SummaryWriter = None, device=torch.device('cpu')):
+                 summary_writer: SummaryWriter = None, device=torch.device('cpu'),
+                 obj_evaluator: ObjectiveReachedEvaluator = None):
         """
         Args:
             target_update_rate: if 1, vanilla dqn update
@@ -67,7 +69,8 @@ class DQNPolicy(RLPolicy, Service):
             domain, buffer_cls=buffer_cls,
             buffer_size=replay_buffer_size, batch_size=batch_size,
             discount_gamma=discount_gamma, include_confreq=include_confreq,
-            logger=logger, max_turns=max_turns, device=device)
+            logger=logger, max_turns=max_turns, device=device,
+            obj_evaluator)
 
         Service.__init__(self, domain=domain)
 

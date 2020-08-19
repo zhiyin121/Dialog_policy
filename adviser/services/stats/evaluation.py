@@ -25,7 +25,7 @@ from utils.logger import DiasysLogger
 from utils.sysact import SysAct
 
 
-class ObjectiveReachedEvaluator(object):
+class ObjectiveReachedEvaluator(Service):
     """ Evaluate single turns and complete dialog.
 
         This class assigns a negative reward to each turn.
@@ -37,12 +37,14 @@ class ObjectiveReachedEvaluator(object):
 
     def __init__(self, domain: Domain, turn_reward=-1, success_reward=20,
                  logger: DiasysLogger = DiasysLogger()):
+        super(ObjectiveReachedEvaluator, self).__init__(domain)
         assert turn_reward <= 0.0, 'the turn reward should be negative'
         self.domain = domain
         self.turn_reward = turn_reward
         self.success_reward = success_reward
         self.logger = logger
 
+    @PublishSubscribe(sub_topics=["happiness"])# , pub_topics=["turn_reward"])
     def get_turn_reward(self, happiness: float):
         """ 
         Get the reward for one turn
@@ -52,7 +54,7 @@ class ObjectiveReachedEvaluator(object):
         """
         self.turn_reward += happiness
             
-        return self.turn_reward
+        # return {"turn_reward": self.turn_reward}
 
     def get_final_reward(self, sim_goal: Goal, logging=True):
         """ 
@@ -108,7 +110,8 @@ class PolicyEvaluator(Service):
 
     def __init__(self, domain: Domain, subgraph: dict = None, use_tensorboard=False,
                  experiment_name: str = '', turn_reward=-1, success_reward=20,
-                 logger: DiasysLogger = DiasysLogger(), summary_writer=None):
+                 logger: DiasysLogger = DiasysLogger(), summary_writer=None, 
+                 obj_evaluator: ObjectiveReachedEvaluator = None):
         """
         Keyword Arguments:
             use_tensorboard {bool} -- [If true, metrics will be written to
@@ -124,8 +127,8 @@ class PolicyEvaluator(Service):
         super(PolicyEvaluator, self).__init__(domain)
         self.logger = logger
         self.epoch = 0
-        self.evaluator = ObjectiveReachedEvaluator(
-            domain, turn_reward=turn_reward, success_reward=success_reward, logger=logger)
+        self.evaluator = obj_evaluator #  ObjectiveReachedEvaluator(
+            #  domain, turn_reward=turn_reward, success_reward=success_reward, logger=logger)
 
         self.writer = summary_writer
 
@@ -153,7 +156,7 @@ class PolicyEvaluator(Service):
             Returns:
                 (bool): A signal representing the end of a complete dialog turn
         """
-        self.dialog_reward += self.evaluator.get_turn_reward(0)#happiness)
+        self.dialog_reward += self.evaluator.turn_reward  # get_turn_reward(0)#happiness)
         self.dialog_turns += 1
 
         return {"sys_turn_over": True}

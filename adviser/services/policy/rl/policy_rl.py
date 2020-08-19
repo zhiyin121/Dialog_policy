@@ -56,7 +56,8 @@ class RLPolicy(object):
     def __init__(self, domain: JSONLookupDomain, buffer_cls=UniformBuffer,
                  buffer_size=6000, batch_size=64, discount_gamma=0.99, max_turns: int = 25,
                  include_confreq=False, logger: DiasysLogger = DiasysLogger(),
-                 include_select: bool = False, device=torch.device('cpu')):
+                 include_select: bool = False, device=torch.device('cpu'),
+                 obj_evaluator: ObjectiveReachedEvaluator = None):
         """
         Creates state- and action spaces, initializes experience replay
         buffers.
@@ -89,7 +90,7 @@ class RLPolicy(object):
         self.logger = logger
         self.domain = domain
         # setup evaluator for training
-        self.evaluator = ObjectiveReachedEvaluator(domain, logger=logger)
+        self.evaluator = obj_evaluator #  ObjectiveReachedEvaluator(domain, logger=logger)
 
         self.buffer_size = buffer_size
         self.batch_size = batch_size
@@ -526,7 +527,7 @@ class RLPolicy(object):
             self.logger.dialog_turn("system action > " + str(self.last_sys_act))
         self._update_system_belief(beliefstate, self.last_sys_act)
 
-        turn_reward = self.evaluator.get_turn_reward()
+        turn_reward = self.evaluator.turn_reward
 
         if self.is_training:
             self.buffer.store(state_vector, sys_act_idx, turn_reward, terminal=False)

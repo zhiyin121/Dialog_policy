@@ -192,10 +192,12 @@ class HandcraftedUserSimulator(Service):
 
         """
         # human will have random patient at the beginning
-        if sys_act is not None and sys_act.type == SysActionType.Confirm:
+        if sys_act is not None and sys_act.type == SysActionType.RequestMore:
             self.happiness -= 0.5
+        # Bad did not occur while we do experiment, just put here in case 
         elif sys_act is not None and sys_act.type == SysActionType.Bad:
             self.happiness -= 1.0
+        # if system repeat same action
         elif sys_act == self.last_system_action:
             self.happiness -= 1.0
         elif self.goal.is_fulfilled():

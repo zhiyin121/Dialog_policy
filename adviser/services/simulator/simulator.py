@@ -202,6 +202,7 @@ class HandcraftedUserSimulator(Service):
             self.happiness -= 1.0
         elif self.goal.is_fulfilled():
             self.happines += 1.5
+        # for the rest of system action, we consider it as natural dialog with good user experience 
         else:
             self.happines += 0.5
         # the dialog is finished

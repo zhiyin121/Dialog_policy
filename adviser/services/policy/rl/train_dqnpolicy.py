@@ -134,11 +134,11 @@ if __name__ == "__main__":
     parser.add_argument("-rs", "--randomseed", default=12345, type=int,
                         help="seed for random generator initialization; use -1 for a randomly generated seed")
 
-    parser.add_argument("-e", "--epochs", default=8, type=int,
+    parser.add_argument("-e", "--epochs", default=10, type=int,
                         help="number of training and evaluation epochs")
     parser.add_argument("-td", "--traindialogs", default=1000, type=int,
                         help="number of training dialogs per epoch")
-    parser.add_argument("-ed", "--evaldialogs", default=500, type=int,
+    parser.add_argument("-ed", "--evaldialogs", default=1000, type=int,
                         help="number of evaluation dialogs per epoch")
     parser.add_argument("-mt", "--maxturns", default=25, type=int,
                         help="maximum turns per dialog (dialogs with more turns will be terminated and counting as failed")

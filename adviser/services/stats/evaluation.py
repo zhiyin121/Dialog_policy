@@ -16,7 +16,7 @@
 # along with Adviser.  If not, see <https://www.gnu.org/licenses/>.
 #
 ###############################################################################
-
+# 56/172
 
 from services.service import Service, PublishSubscribe
 from services.simulator.goal import Goal
@@ -168,12 +168,13 @@ class PolicyEvaluator(Service):
         """
         # print(emotion_status)
         
-        self.dialog_reward += 0#emotion_status[0]-emotion_status[1]
+        self.dialog_reward += 0 #emotion_status[1]-emotion_status[0]
 
     def dialog_start(self, dialog_start=False):
         """
             Clears the state of the evaluator in preparation to start a new dialog
         """
+        self.evaluator.turn_reward = -1
         self.dialog_reward = 0.0
         self.dialog_turns = 0
 
@@ -222,12 +223,17 @@ class PolicyEvaluator(Service):
             if self.writer is not None:
                 self.writer.add_scalar('train/episode_reward', self.dialog_reward,
                                        self.total_train_dialogs)
+                self.writer.add_scalar("trian/episode_turns", self.dialog_turns,
+                                       self.total_eval_dialogs)
+                                       
         else:
             self.eval_rewards.append(self.dialog_reward)
             self.eval_success.append(int(success))
             self.eval_turns.append(self.dialog_turns)
             if self.writer is not None:
                 self.writer.add_scalar('eval/episode_reward', self.dialog_reward,
+                                       self.total_eval_dialogs)
+                self.writer.add_scalar("eval/episode_turns", self.dialog_turns,
                                        self.total_eval_dialogs)
 
         return {"dialog_end": True}

@@ -33,20 +33,38 @@ from utils.domain.domain import Domain
 from utils.logger import DiasysLogger
 from utils.userstate import EmotionType
 
-def emotionadd(emotion_list, action):
-    if action == 0:
+def emotionadd(emotion_list, reward):
+    emotion_list.append(reward+emotion_list[-1])
+    '''if emotion_list[-1] == 1:
+        if reward > 0:
+            emotion_list.append(emotion_list[-1])
+        else:
+            emotion_list.append(emotion_list[-1] + reward)
+    elif emotion_list[-1] == -1:
+        if reward < 0:
+            emotion_list.append(emotion_list[-1])
+        else:
+            emotion_list.append(emotion_list[-1] + reward)
+    elif emotion_list[-1] > -1 and emotion_list[-1] < 1:
+        emotion_list.append(emotion_list[-1] + reward)'''
+    #print(emotion_list)
+    return emotion_list
+    
+    '''    
+    if reward == 0:
         emotion_list.append(emotion_list[-1])
-    elif action == 1:
+    elif reward == 1:
         if emotion_list[-1] == 1:
             emotion_list.append(emotion_list[-1])
         else:
             emotion_list.append(emotion_list[-1]+1)
-    elif action == -1:
+    elif reward == -1:
         if emotion_list[-1] == -1:
             emotion_list.append(emotion_list[-1])
         else:
             emotion_list.append(emotion_list[-1]-1)
-    return emotion_list
+    return emotion_list'''
+
 
 
 class HandcraftedUserSimulator(Service):
@@ -125,7 +143,7 @@ class HandcraftedUserSimulator(Service):
 
         self.goal.init()
         self.agenda.init(self.goal)
-        self.emotion_list = [random.choice([1, 0, -1])]
+        self.emotion_list = [random.choice([1, 0])]
         self.happiness = round(random.uniform(0, 1), 2)
         if self.logger:
             self.logger.dialog_turn(
@@ -172,7 +190,7 @@ class HandcraftedUserSimulator(Service):
         if sys_act is not None:
             self.receive(sys_act)
             self.user_happiness(sys_act)
-
+        self.logger.dialog_turn("agenda: " + str([a for a in self.agenda.stack]))
         user_acts = self.respond()
 
         # user_acts = [UserAct(text="Hi!", act_type=UserActionType.Hello, score=1.)]
@@ -183,6 +201,9 @@ class HandcraftedUserSimulator(Service):
         
         # input()
         return {'user_acts': user_acts, 'emotion_status':self.emotion_list[-2:], 'happiness': self.happiness}
+        #return {'user_acts': user_acts, 'emotion_status':self.emotion_list, 'happiness': self.happiness}
+
+
 
     def user_happiness(self, sys_act: SysAct):
         """We measure user happiness based on system action and length of dialog
@@ -194,18 +215,17 @@ class HandcraftedUserSimulator(Service):
         # human will have random patient at the beginning
         if sys_act is not None and sys_act.type == SysActionType.RequestMore:
             self.happiness -= 0.5
-        # Bad did not occur while we do experiment, just put here in case 
+        # Bad did not occur while we do experiment, just put here in case
         elif sys_act is not None and sys_act.type == SysActionType.Bad:
             self.happiness -= 1.0
         # if system repeat same action
         elif sys_act == self.last_system_action:
             self.happiness -= 1.0
         elif self.goal.is_fulfilled():
-            self.happines += 1.5
-        # for the rest of system action, we consider it as natural dialog with good user experience 
+            self.happiness += 1.5
         else:
-            self.happines += 0.5
-        # the dialog is finished
+            self.happiness += 0.5
+        # for the rest of system action, we consider it as natural dialog with good user experience
         if sys_act is not None and sys_act.type == SysActionType.Bye:
             return self.happiness
 
@@ -310,14 +330,14 @@ class HandcraftedUserSimulator(Service):
             if action.slot not in self.goal.requests:
                 req_actions_not_in_goal.append(copy.deepcopy(action))
 
-        # goal might be fulfilled now
+        # Emotiongoal might be fulfilled now
         if (self.goal.is_fulfilled()
                 and not self.agenda.contains_action_of_type(UserActionType.Inform)
                 and not req_actions_not_in_goal):
             emotionadd(self.emotion_list, 1)
             self._finish_dialog()
         else:
-            emotionadd(self.emotion_list, -1)
+            emotionadd(self.emotion_list, 0)
        
         
 
@@ -333,9 +353,10 @@ class HandcraftedUserSimulator(Service):
         if self.excluded_venues and self.goal.requests[self.domain.get_primary_key()] is None:
             self._receive_informbyname(sys_act)
         else:
+            emotionadd(self.emotion_list, 0.5)
             self._repeat_last_actions()
 
-        emotionadd(self.emotion_list, 0)
+        
         
 
     def _receive_request(self, sys_act: SysAct):
@@ -346,13 +367,22 @@ class HandcraftedUserSimulator(Service):
         Args:
             sys_act (SysAct): the last system action        
         """
+        i = 0
         for slot, _ in sys_act.slot_values.items():
             self.agenda.push(UserAct(
                 act_type=UserActionType.Inform,
                 slot=slot, value=self.goal.get_constraint(slot),
                 score=1.0))
-                
-        emotionadd(self.emotion_list, 0)
+            # count numbers of 'dontcare' in constraint
+            if self.goal.get_constraint(slot) == 'dontcare':
+                i += 1
+        # if number of 'dontcare' > 1, reward -1, else remain
+        if i > 0:
+            emotionadd(self.emotion_list, 0)
+        else:
+            emotionadd(self.emotion_list, 0.5)
+
+
 
 
     def _receive_confirm(self, sys_act: SysAct):
@@ -362,8 +392,7 @@ class HandcraftedUserSimulator(Service):
         Args:
             sys_act (SysAct): the last system action        
         """
-
-        flag = True
+        
         for slot, _value in sys_act.slot_values.items():
             value = _value[0]  # there is always only one value
             if self.goal.is_inconsistent_constraint_strict(Constraint(slot, value)):
@@ -376,19 +405,24 @@ class HandcraftedUserSimulator(Service):
                         score=1.0))
                 else:  # negative
                     self.agenda.push(UserAct(
-                        act_type=UserActionType.NegativeInform, slot=slot, value=value, score=1.0))  
+                        act_type=UserActionType.NegativeInform, slot=slot, value=value, score=1.0))
             else:
+                flag = True
                 # NOTE using inform currently since NLU currently does not support Affirm here and
                 # NLU would tinker it into an Inform action anyway
                 # self.agenda.push(
                 #     UserAct(act_type=UserActionType.Affirm, score=1.0))
                 self.agenda.push(
                     UserAct(act_type=UserActionType.Inform, slot=slot, value=value, score=1.0))
+                
         
+
+        # the confirm slot is not in goal's contraint
         if flag:
-             emotionadd(self.emotion_list, 1)
+                emotionadd(self.emotion_list, 0)
+        # the confirm slot in goal's contraint
         else:
-             emotionadd(self.emotion_list, -1)
+            emotionadd(self.emotion_list, 1)
 
 
     def _receive_select(self, sys_act: SysAct):
@@ -438,6 +472,7 @@ class HandcraftedUserSimulator(Service):
         """
         if self.goal.is_fulfilled():
             # end dialog
+            emotionadd(self.emotion_list, 2)  
             self._finish_dialog()
         elif (not self.agenda.contains_action_of_type(UserActionType.Inform)
               and self.goal.requests['name'] is not None):
@@ -445,11 +480,12 @@ class HandcraftedUserSimulator(Service):
             # is missing
             if self.agenda.is_empty():
                 self.agenda.fill_with_requests(self.goal)
+            emotionadd(self.emotion_list, 1) 
         else:
             # make sure that dialog becomes longer
             self._repeat_last_actions()
-            
-        emotionadd(self.emotion_list, 0)   
+            emotionadd(self.emotion_list, 0) 
+          
         
 
     def _receive_bad(self, sys_act:SysAct):
